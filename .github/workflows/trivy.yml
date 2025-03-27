@@ -1,24 +1,23 @@
-name: build
+name: Generate SBOM
 on:
   push:
     branches:
-      - main
-  pull_request:
+    - main
+
+## GITHUB_TOKEN authentication, add only if you're not going to use a PAT
+permissions:
+  contents: write
+
 jobs:
-  build:
-    name: Build
-    runs-on: ubuntu-20.04
+  generate-sbom:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Build an image from Dockerfile
-        run: docker build -t docker.io/my-organization/my-app:${{ github.sha }} .
-      - name: Run Trivy vulnerability scanner
+        uses: actions/checkout@v4
+
+      - name: Run Trivy in GitHub SBOM mode and submit results to Dependency Graph
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: 'docker.io/my-organization/my-app:${{ github.sha }}'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
+          scan-type: 'fs'
+          format: 'github'
+          output: 'dependency-results.sbom.json'
